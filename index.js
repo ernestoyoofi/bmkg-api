@@ -136,6 +136,6 @@ app.use((req, res, next) => {
   res.status(404).sendFile(__dirname+"/404.html")
 })
 
-app.listen(PORT, () => {
-  console.log(`Server Running In Port http://localhost:${PORT}/\n`)
+app.listen(process.env.PORT || PORT, () => {
+  console.log(`Server Running In Port http://localhost:${process.env.PORT || PORT}/\n`)
 })

@@ -2,9 +2,11 @@ const axios = require("axios")
 const cheerio = require("cheerio")
 const app = require("express")()
 const PORT = 5000
+const cors = require('cors')
 
 const option = { headers: { 'User-Agent': 'Muezza Fetch/12.15.1' }  }
 
+app.use(cors())
 // HOME APIs
 app.get("/", (req, res) => {
   res.setHeader('X-Powered-By', 'Muezza.js')
@@ -18,12 +20,108 @@ app.get("/", (req, res) => {
       foto:`${protocol}${req.headers.host || "localhost"+PORT}/berita/foto`,
       daerah:`${protocol}${req.headers.host || "localhost"+PORT}/berita/daerah`
     },
-    cuaca: "Coming Soon !",
+    cuaca: {
+      semua: `${protocol}${req.headers.host || "localhost"+PORT}/cuaca/all`
+    },
     gempa: {
       terakhir: `${protocol}${req.headers.host || "localhost"+PORT}/gempa/terakhir`,
       dirasakan: `${protocol}${req.headers.host || "localhost"+PORT}/gempa/dirasakan`,
       terkini: `${protocol}${req.headers.host || "localhost"+PORT}/gempa/terkini`
     }
+  })
+})
+
+// CUACA / 
+app.get("/cuaca/all", (req, res) => {
+  res.setHeader('X-Powered-By', 'Muezza.js')
+  res.setHeader('Create-By', 'Ernestoyoofi')
+  axios.get("https://www.bmkg.go.id/cuaca/prakiraan-cuaca-indonesia.bmkg").then(resd => {
+    const html = cheerio.load(resd.data)
+    let date = []
+    let index_one = []
+    let index_two = []
+    let index_three = []
+    html('.prakicu-kabkota.tab-v1 .nav.nav-tabs a').each((i, el) => {
+      date.push(html(el).text())
+    })
+    html('.prakicu-kabkota.tab-v1 #TabPaneCuaca1 tbody tr').each((i, el) => {
+      index_one.push({
+        kota: html('a', el).text(),
+        perkiraan: {
+          icon: html('img', el).attr('src'),
+          status: html('span.tekscuaca', el).text()
+        },
+        sensor: {
+          suhu: html('td:nth-of-type(3)', el).text(),
+          kelembapan: html('td:nth-of-type(4)', el).text()
+        },
+        url: "https://www.bmkg.go.id/cuaca" + html('a', el).attr('href')
+      })
+    })
+    // Index Two
+    html('.prakicu-kabkota.tab-v1 #TabPaneCuaca2 tbody tr').each((i, el) => {
+      let icon = []
+      let status = []
+      html('img', el).each((i, el) => {
+        icon.push(html(el).attr('src'))
+      })
+      html('.tekscuaca', el).each((i, el) => {
+        status.push(html(el).text())
+      })
+      index_two.push({
+        kota: html('a', el).text(),
+        perkiraan: {
+          icon: icon,
+          status: status
+        },
+        sensor: {
+          suhu: html('td:nth-of-type(6)', el).text(),
+          kelembapan: html('td:nth-of-type(7)', el).text()
+        },
+        url: "https://www.bmkg.go.id/cuaca" + html('a', el).attr('href')
+      })
+    })
+    // Index Three
+    html('.prakicu-kabkota.tab-v1 #TabPaneCuaca3 tbody tr').each((i, el) => {
+      let icon = []
+      let status = []
+      html('img', el).each((i, el) => {
+        icon.push(html(el).attr('src'))
+      })
+      html('.tekscuaca', el).each((i, el) => {
+        status.push(html(el).text())
+      })
+      index_three.push({
+        kota: html('a', el).text(),
+        perkiraan: {
+          icon: icon,
+          status: status
+        },
+        sensor: {
+          suhu: html('td:nth-of-type(6)', el).text(),
+          kelembapan: html('td:nth-of-type(7)', el).text()
+        },
+        url: "https://www.bmkg.go.id/cuaca" + html('a', el).attr('href')
+      })
+    })
+    const json = {
+      date,
+      data: {
+        index_one: {
+          date: date[0],
+          data: index_one
+        },
+        index_two: {
+          date: date[1],
+          data: index_two
+        },
+        index_three: {
+          date: date[1],
+          data: index_three
+        }
+      }
+    }
+    res.send(json)
   })
 })
 
